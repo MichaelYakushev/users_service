@@ -34,7 +34,8 @@ func main() {
 	router.GET("/users/:id/roles", getRolesByID)
 	router.POST("/users", postUsers)
 	router.DELETE("/users/:id", delUsers)
-	router.POST("/users/:id/edit_roles", editUsers)
+	router.POST("/users/:id/edit_roles", editRoles)
+	router.POST("/users/:id/edit_user", editUsers)
 
 	router.Run("localhost:8080")
 }
@@ -99,8 +100,8 @@ func getRolesByID(c *gin.Context) {
 }
 
 // TODO: fix it
-func editUsers(c *gin.Context) {
-	id := c.Param("d")
+func editRoles(c *gin.Context) {
+	id := c.Param("id")
 
 	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
@@ -118,5 +119,26 @@ func editUsers(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "role not found"})
+
+}
+func editUsers(c *gin.Context) {
+	id := c.Param("id")
+
+	for index, u := range users {
+		if (u.TgId == id) || (u.GithubId == id) {
+			var newUser user
+			err := c.BindJSON(&newUser)
+			users[index] = newUser
+
+			if err != nil {
+				return
+			}
+			c.IndentedJSON(http.StatusOK, newUser)
+			return
+		}
+
+	}
+
+	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
 
 }
