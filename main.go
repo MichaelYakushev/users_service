@@ -101,18 +101,22 @@ func getRolesByID(c *gin.Context) {
 // TODO: fix it
 func editUsers(c *gin.Context) {
 	id := c.Param("d")
-	for _, u := range users {
+
+	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
+			var newUser user
+			err := c.BindJSON(&newUser)
+			users[index].Roles = newUser.Roles
+
+			if err != nil {
+				return
+			}
+			c.IndentedJSON(http.StatusOK, newUser.Roles)
 			return
 		}
+
 	}
 
 	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "role not found"})
-	var newUser user
-	err := c.BindJSON(&newUser)
-	if err != nil {
-		return
-	}
-	users = append(users, newUser)
-	c.IndentedJSON(http.StatusCreated, newUser.Roles)
+
 }
