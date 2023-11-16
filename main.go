@@ -97,6 +97,8 @@ func getRolesByID(c *gin.Context) {
 	}
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "role not found"})
 }
+
+// TODO: fix it
 func editUsers(c *gin.Context) {
 	id := c.Param("d")
 	for _, u := range users {
