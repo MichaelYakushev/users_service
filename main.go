@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// user represents data about a user.
+// user представляет данные о пользователе.
 type user struct {
 	GithubId    string `json:"github_id"`
-	TgId        string `json:"telegramid"`
+	TgId        string `json:"telegram_id"`
 	Roles       string `json:"roles"`
 	Fio         string `json:"fio"`
 	GroupNumber string `json:"group_number"`
@@ -20,7 +20,7 @@ type errorMessage struct {
 	Message string `json:"message"`
 }
 
-// users slice to seed user data.
+// слайс для заполнения данных о пользователях.
 var users = []user{
 	{GithubId: "11242", TgId: "8837hSh", Roles: "Студент", Fio: "Иван Кононский", GroupNumber: "ИВТ-232"},
 	{GithubId: "1242", TgId: "49957hSh", Roles: "Преподаватель", Fio: "Вячеслав Белый", GroupNumber: "ИВТ-232"},
@@ -40,26 +40,27 @@ func main() {
 	router.Run("localhost:8080")
 }
 
-// getUsers responds with the list of all users as JSON.
+// getUsers выдает список всех пользователей в формате JSON.
 func getUsers(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, users)
 }
 
-// postUsers adds an user from JSON received in the request body.
+// postUsers добавляет пользователя из JSON, полученного в теле запроса.
 func postUsers(c *gin.Context) {
 	var newUser user
 
-	// Call BindJSON to bind the received JSON to newUser.
+	// Вызываем BindJSON, чтобы привязать полученный JSON к новому пользователю.
 	err := c.BindJSON(&newUser)
 	if err != nil {
 		return
 	}
 
-	// Add the new user to the slice.
+	// Добавляем нового пользователя в слайс.
 	users = append(users, newUser)
 	c.IndentedJSON(http.StatusCreated, newUser)
 }
 
+// delUsers удаляет пользователя из слайса.
 func delUsers(c *gin.Context) {
 	id := c.Param("id")
 	for index, u := range users {
@@ -69,25 +70,22 @@ func delUsers(c *gin.Context) {
 			return
 		}
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
-
+	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
 }
 
-// getUserByID locates the user whose TgID value or GithubId value matches the id
-// parameter sent by the client, then returns that user as a response.
+// getUserByID проверяет существование пользователя.
 func getUserByID(c *gin.Context) {
 	id := c.Param("id")
-
-	// Loop through the list of users, looking for
-	// an user whose TgID or GithubId value matches the parameter.
 	for _, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
 			c.IndentedJSON(http.StatusOK, u)
 			return
 		}
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
 }
+
+// getRolesByID проверяет роль пользователя.
 func getRolesByID(c *gin.Context) {
 	id := c.Param("id")
 	for _, u := range users {
@@ -96,49 +94,41 @@ func getRolesByID(c *gin.Context) {
 			return
 		}
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "role not found"})
+	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
 }
 
-// TODO: fix it
+// editRoles изменяет роль пользователя на роль из JSON, полученного в теле запроса.
 func editRoles(c *gin.Context) {
 	id := c.Param("id")
-
 	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
 			var newUser user
 			err := c.BindJSON(&newUser)
 			users[index].Roles = newUser.Roles
-
 			if err != nil {
 				return
 			}
 			c.IndentedJSON(http.StatusOK, newUser.Roles)
 			return
 		}
-
 	}
-
-	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "role not found"})
-
+	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
 }
+
+// editUsers изменяет данные пользователя на данные из JSON, полученного в теле запроса.
 func editUsers(c *gin.Context) {
 	id := c.Param("id")
-
 	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
 			var newUser user
 			err := c.BindJSON(&newUser)
 			users[index] = newUser
-
 			if err != nil {
 				return
 			}
 			c.IndentedJSON(http.StatusOK, newUser)
 			return
 		}
-
 	}
-
 	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
-
 }
