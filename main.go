@@ -104,7 +104,7 @@ func editUsers(c *gin.Context) {
 			return
 		}
 	}
-	//c.IndentedJSON(http.StatusNotFound, gin.H{"message": "role not found"})
+
 	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "role not found"})
 	var newUser user
 	err := c.BindJSON(&newUser)
