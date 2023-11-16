@@ -34,8 +34,8 @@ func main() {
 	router.GET("/users/:id/roles", getRolesByID)
 	router.POST("/users", postUsers)
 	router.DELETE("/users/:id", delUsers)
-	router.POST("/users/:id/edit_roles", editRoles)
-	router.POST("/users/:id/edit_user", editUsers)
+	router.POST("/users/:id/roles", editRoles)
+	router.POST("/users/:id", editUsers)
 
 	router.Run("localhost:8080")
 }
@@ -122,11 +122,12 @@ func editUsers(c *gin.Context) {
 		if (u.TgId == id) || (u.GithubId == id) {
 			var newUser user
 			err := c.BindJSON(&newUser)
-			users[index] = newUser
+			users[index].Fio = newUser.Fio
+			users[index].GroupNumber = newUser.GroupNumber
 			if err != nil {
 				return
 			}
-			c.IndentedJSON(http.StatusOK, newUser)
+			c.IndentedJSON(http.StatusOK, users[index])
 			return
 		}
 	}
