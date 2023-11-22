@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 	"net/http"
 	"slices"
-
-	"github.com/gin-gonic/gin"
 )
 
 // user представляет данные о пользователе.
@@ -27,7 +28,31 @@ var users = []user{
 	{GithubId: "11", TgId: "14227hSh", Roles: "Студент,Администратор", Fio: "Иннокентий Васильев", GroupNumber: "ИВТ-232"},
 }
 
+type Config struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	DBName   string
+	SSLMode  string
+}
+
+var config = Config{
+	Host:     "localhost",
+	Port:     "5432",
+	Username: "postgres",
+	Password: "postgres1G5",
+	DBName:   "postgres",
+	SSLMode:  "disabled",
+}
+
 func main() {
+	_, err := ConnectDB(config)
+
+	if err != nil {
+		fmt.Println("Connection to DB fail", err)
+	}
+
 	router := gin.Default()
 	router.GET("/users", getUsers)
 	router.GET("/users/:id", getUserByID)
@@ -132,4 +157,17 @@ func editUsers(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
+}
+
+func ConnectDB(cfg Config) (*sqlx.DB, error) {
+	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s username=%s password=%s dbname=%s sslmode=%s",
+		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode))
+	if err != nil {
+		return nil, err
+	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
