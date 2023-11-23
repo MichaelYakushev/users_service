@@ -22,13 +22,6 @@ type errorMessage struct {
 	Message string `json:"message"`
 }
 
-// слайс для заполнения данных о пользователях.
-var users = []User{
-	{GithubId: "11242", TgId: "8837hSh", Roles: "Студент", Fio: "Иван Кононский", GroupNumber: "ИВТ-232"},
-	{GithubId: "1242", TgId: "49957hSh", Roles: "Преподаватель", Fio: "Вячеслав Белый", GroupNumber: "ИВТ-232"},
-	{GithubId: "11", TgId: "14227hSh", Roles: "Студент,Администратор", Fio: "Иннокентий Васильев", GroupNumber: "ИВТ-232"},
-}
-
 type Config struct {
 	Host     string
 	Port     string
@@ -58,16 +51,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//user := User{}
-	//rows, err := db.Queryx("SELECT * FROM users")
-	//for rows.Next() {
-	//	err := rows.StructScan(&user)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	fmt.Printf("%#v\n", user)
-	//}
-
 	router := gin.Default()
 	router.GET("/users", getUsers)
 	router.GET("/users/:id", getUserByID)
@@ -82,9 +65,7 @@ func main() {
 
 // getUsers выдает список всех пользователей в формате JSON.
 func getUsers(c *gin.Context) {
-	//1. создаем массив пользователй пустой
 	var people = []User{}
-	//2.
 	user := User{}
 	rows, _ := db.Queryx("SELECT * FROM users")
 	for rows.Next() {
@@ -241,17 +222,6 @@ func editUsers(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, "ok")
 	return
 }
-
-//for index, u := range users {
-//	if (u.TgId == id) || (u.GithubId == id) {
-//		var newUser User
-//		err := c.BindJSON(&newUser)
-//		users[index].Fio = newUser.Fio
-//		users[index].GroupNumber = newUser.GroupNumber
-//
-//}
-//c.IndentedJSON(http.StatusNotFound, errorMessage{Message: "user not found"})
-//}
 
 func ConnectDB(cfg Config) (*sqlx.DB, error) {
 
