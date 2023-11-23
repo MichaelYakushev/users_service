@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"log"
 	"net/http"
 	"slices"
 )
 
 // user представляет данные о пользователе.
-type user struct {
-	GithubId    string `json:"github_id"`
-	TgId        string `json:"telegram_id"`
-	Roles       string `json:"roles"`
-	Fio         string `json:"fio"`
-	GroupNumber string `json:"group_number"`
+type User struct {
+	GithubId    string `json:"github_id" db:"github_id"`
+	TgId        string `json:"telegram_id" db:"telegram_id"`
+	Roles       string `json:"roles" db:"roles"`
+	Fio         string `json:"fio" db:"fio"`
+	GroupNumber string `json:"group_number" db:"group_number"`
 }
 
 type errorMessage struct {
@@ -22,7 +24,7 @@ type errorMessage struct {
 }
 
 // слайс для заполнения данных о пользователях.
-var users = []user{
+var users = []User{
 	{GithubId: "11242", TgId: "8837hSh", Roles: "Студент", Fio: "Иван Кононский", GroupNumber: "ИВТ-232"},
 	{GithubId: "1242", TgId: "49957hSh", Roles: "Преподаватель", Fio: "Вячеслав Белый", GroupNumber: "ИВТ-232"},
 	{GithubId: "11", TgId: "14227hSh", Roles: "Студент,Администратор", Fio: "Иннокентий Васильев", GroupNumber: "ИВТ-232"},
@@ -43,26 +45,37 @@ var config = Config{
 	Username: "postgres",
 	Password: "postgres1G5",
 	DBName:   "postgres",
-	SSLMode:  "disabled",
+	SSLMode:  "disable",
 }
 
 func main() {
-	_, err := ConnectDB(config)
+	db, err := ConnectDB(config)
 
 	if err != nil {
 		fmt.Println("Connection to DB fail", err)
+		log.Fatal(err)
 	}
 
-	router := gin.Default()
-	router.GET("/users", getUsers)
-	router.GET("/users/:id", getUserByID)
-	router.GET("/users/:id/roles", getRolesByID)
-	router.POST("/users", postUsers)
-	router.DELETE("/users/:id", delUsers)
-	router.POST("/users/:id/roles", editRoles)
-	router.POST("/users/:id", editUsers)
+	user := User{}
+	rows, err := db.Queryx("SELECT * FROM users")
+	for rows.Next() {
+		err := rows.StructScan(&user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%#v\n", user)
+	}
 
-	router.Run("localhost:8080")
+	//router := gin.Default()
+	//router.GET("/users", getUsers)
+	//router.GET("/users/:id", getUserByID)
+	//router.GET("/users/:id/roles", getRolesByID)
+	//router.POST("/users", postUsers)
+	//router.DELETE("/users/:id", delUsers)
+	//router.POST("/users/:id/roles", editRoles)
+	//router.POST("/users/:id", editUsers)
+	//
+	//router.Run("localhost:8080")
 }
 
 // getUsers выдает список всех пользователей в формате JSON.
@@ -72,7 +85,7 @@ func getUsers(c *gin.Context) {
 
 // postUsers добавляет пользователя из JSON, полученного в теле запроса.
 func postUsers(c *gin.Context) {
-	var newUser user
+	var newUser User
 
 	// Вызываем BindJSON, чтобы привязать полученный JSON к новому пользователю.
 	err := c.BindJSON(&newUser)
@@ -127,7 +140,7 @@ func editRoles(c *gin.Context) {
 	id := c.Param("id")
 	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
-			var newUser user
+			var newUser User
 			err := c.BindJSON(&newUser)
 			users[index].Roles = newUser.Roles
 			if err != nil {
@@ -145,7 +158,7 @@ func editUsers(c *gin.Context) {
 	id := c.Param("id")
 	for index, u := range users {
 		if (u.TgId == id) || (u.GithubId == id) {
-			var newUser user
+			var newUser User
 			err := c.BindJSON(&newUser)
 			users[index].Fio = newUser.Fio
 			users[index].GroupNumber = newUser.GroupNumber
@@ -160,8 +173,10 @@ func editUsers(c *gin.Context) {
 }
 
 func ConnectDB(cfg Config) (*sqlx.DB, error) {
-	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s username=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode))
+
+	url := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port,
+		cfg.DBName, cfg.SSLMode)
+	db, err := sqlx.Open("postgres", url)
 	if err != nil {
 		return nil, err
 	}
